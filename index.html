@@ -138,7 +138,7 @@
 <body>
 
     <div class="container">
-<h2 style="text-align: center; width: 100%;" >Web Page to Extra Data for Image and Generate GPS Tagged Image</h2>
+        <h2 style="text-align: center; width: 100%;">Web Page to Extra Data for Image and Generate GPS Tagged Image</h2>
         <div class="panel">
             <h3>Upload Pic to Extract Data - OCR Section</h3>
             <input type="file" id="imageInput" accept="image/*">
@@ -186,7 +186,7 @@
             <textarea id="address" rows="4" style="width:520px" placeholder="Address"></textarea><br>
 
             <button onclick="loadLocation()">Update GPS Details</button><br>
-           
+
 
             <div class="image-container" id="captureArea">
                 <img class="main-image" id="uploadImg">
@@ -201,7 +201,7 @@
             <button onclick="takeScreenshot()">Take Screenshot of GPS Image</button>
         </div>
 
-        
+
     </div>
 
     <script>
@@ -379,7 +379,7 @@
 
             // Date formats
             const dateRegex =
-                /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}[\s,]*\d{1,2}:\d{2}(?::\d{2})?|\d{1,2}\s+[A-Za-z]{3,9}\s+\d{4}\s+\d{1,2}:\d{2}(?::\d{2})?)/i;
+                /((?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\s*,?\s*\d{1,2}\/\d{1,2}\/\d{4}\s+\d{1,2}:\d{2}\s*(?:AM|PM)\s*GMT\s*[+-]\d{2}:\d{2}|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}[\s,]*\d{1,2}:\d{2}(?::\d{2})?|\d{1,2}\s+[A-Za-z]{3,9}\s+\d{4}\s+\d{1,2}:\d{2}(?::\d{2})?)/i;
 
             const dateMatch =
                 address.match(dateRegex);
@@ -396,10 +396,11 @@
             }
 
             // Decimal coordinates
-            const coordinateRegex =
+            // Existing coordinate formats
+            let coordinateRegex =
                 /-?\d{1,2}\.\d+\s*[NS]?[,\s]+\s*-?\d{1,3}\.\d+\s*[EW]?/i;
 
-            const coordinateMatch =
+            let coordinateMatch =
                 address.match(coordinateRegex);
 
             if (coordinateMatch) {
@@ -412,6 +413,31 @@
                         coordinateMatch[0],
                         ""
                     );
+            }
+            else {
+
+                // Additional format:
+                // Lat 33.94357° Long 74.931431°
+                // LAT:33.94357 LONG:74.931431
+                // Lat 33.94357 Long 74.931431
+
+                coordinateRegex =
+                    /Lat[:\s]*([+-]?\d+\.\d+)°?\s*Long[:\s]*([+-]?\d+\.\d+)°?/i;
+
+                coordinateMatch =
+                    address.match(coordinateRegex);
+
+                if (coordinateMatch) {
+
+                    coordinates =
+                        `${coordinateMatch[1]}, ${coordinateMatch[2]}`;
+
+                    address =
+                        address.replace(
+                            coordinateMatch[0],
+                            ""
+                        );
+                }
             }
 
             address =
@@ -709,8 +735,41 @@
                 "Sep", "Oct", "Nov", "Dec"
             ];
 
-            // DD.MM.YYYY HH:MM:SS
+
+
+            // Tuesday, 05/05/2026 02:07 PM GMT +05:30
+
             let m = input.match(
+                /(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\s*,?\s*(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})\s*(AM|PM)/i
+            );
+
+            if (m) {
+
+                const months = [
+                    "January", "February", "March", "April",
+                    "May", "June", "July", "August",
+                    "September", "October", "November", "December"
+                ];
+
+                let day = m[1].padStart(2, "0");
+                let month = months[parseInt(m[2]) - 1];
+                let year = m[3];
+
+                let hour = parseInt(m[4]);
+                let minute = m[5];
+                let ampm = m[6].toUpperCase();
+
+                if (ampm === "PM" && hour !== 12)
+                    hour += 12;
+
+                if (ampm === "AM" && hour === 12)
+                    hour = 0;
+
+                return `${day} ${month} ${year} ${String(hour).padStart(2, "0")}:${minute}:00`;
+            }
+
+            // DD.MM.YYYY HH:MM:SS
+            m = input.match(
                 /^(\d{1,2})\.(\d{1,2})\.(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})$/
             );
 
